@@ -15,8 +15,9 @@ class SharedToggleViewModel(application: Application) : AndroidViewModel(applica
     private var url: String? = null
     private var username: String? = null
     private var password: String? = null
-    val httpUtility = HttpUtility(getApplication())
+    private var httpUtility: HttpUtility = HttpUtility(getApplication())
     private val toggleState = MutableLiveData(false)
+    private val loginError = MutableLiveData<String>()
 
     init {
         setDefaultValues()
@@ -24,6 +25,15 @@ class SharedToggleViewModel(application: Application) : AndroidViewModel(applica
 
     fun getToggleState(): LiveData<Boolean> {
         return toggleState
+    }
+
+    // Expose httpUtility as a public property
+    fun getHttpUtility(): HttpUtility {
+        return httpUtility
+    }
+
+    fun getLoginError(): LiveData<String> {
+        return loginError
     }
 
     fun setToggleState(state: Boolean) {
@@ -41,6 +51,9 @@ class SharedToggleViewModel(application: Application) : AndroidViewModel(applica
                 if (loginSuccess) {
                     toggleState.value = true
                     return@launch
+                } else {
+                    // Notify the activity or fragment of the login error
+                    loginError.value = "接続できませんでした"
                 }
             } else {
                 Log.d(TAG, "disconnect")

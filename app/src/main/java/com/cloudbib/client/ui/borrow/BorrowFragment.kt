@@ -50,7 +50,7 @@ class BorrowFragment : Fragment() {
             Log.d(TAG, "initial state: $toggleState")
             toggleButton.isChecked = toggleState
 
-            toggleButton.setOnCheckedChangeListener { buttonView, isChecked ->
+            toggleButton.setOnCheckedChangeListener { _, isChecked ->
                 // Do something when the toggle button is clicked
                 if (isChecked) {
                     Log.d(TAG, "checked")

@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.cloudbib.client.SharedToggleViewModel
 import com.cloudbib.client.databinding.FragmentSettingBinding
+import com.google.android.material.snackbar.Snackbar
 
 class SettingFragment : Fragment() {
 
@@ -68,6 +69,9 @@ class SettingFragment : Fragment() {
             sharedViewModel.setLoginCredentials(server, userName, password)
 
             Log.d(TAG, "saved")
+
+            // Show a Snackbar to indicate that the settings were saved
+            Snackbar.make(view ?: return@setOnClickListener, "保存しました", Snackbar.LENGTH_SHORT).show()
         }
 
         return root
