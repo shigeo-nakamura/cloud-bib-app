@@ -2,131 +2,237 @@ import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
 import org.json.JSONObject
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.nio.charset.StandardCharsets
 
 data class User(val name: String, val id: Int)
+
+data class BorrowedBook(val id: Int, val title: String)
+
 class HttpResponse(
     val success: Boolean,
     val errorCode: Int,
     val user: User?,
     var returned_book_title: String,
     val returned_book_id: Int,
+    val borrowed_book: BorrowedBook?,
 )
 
 class HttpUtility(private val context: Context) {
     private val TAG = "HttpUtility"
     private var connection: HttpURLConnection? = null
     private var urlString: String? = null
+    var userId: String? = null
+
+    private fun makeHttpPostRequest(
+        urlString: String,
+        postData: String,
+        cookies: Set<String>? = null
+    ): HttpURLConnection? {
+        val url = URL(urlString)
+        val connection = url.openConnection() as? HttpURLConnection ?: return null
+        connection.requestMethod = "POST"
+        connection.doInput = true
+        connection.doOutput = true
+        connection.useCaches = false
+
+        // Set request properties
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.setRequestProperty("Accept", "application/json")
+        connection.setRequestProperty("Connection", "keep-alive")
+        if (cookies != null) {
+            for (cookie in cookies) {
+                connection.addRequestProperty("Cookie", cookie.split(";")[0])
+            }
+        }
+
+        // Write post data to output stream
+        val outputStream = connection.outputStream
+        val writer = OutputStreamWriter(outputStream, StandardCharsets.UTF_8)
+        writer.write(postData)
+        writer.flush()
+        writer.close()
+
+        return connection
+    }
 
     fun login(urlString: String, username: String, password: String): Boolean {
         var success = false
         this.urlString = urlString
 
         try {
-            val url = URL("$urlString/auth/login")
-
-            Log.d(TAG, "url: $url, username: $username")
-
-            connection = url.openConnection() as HttpURLConnection
-            connection!!.requestMethod = "POST"
-            connection!!.doOutput = true
-
-            val postData = "uname=$username&password=$password&user_category=operator&user_id="
-            connection!!.outputStream.write(postData.toByteArray())
-
-            val reader = BufferedReader(InputStreamReader(connection!!.inputStream))
-            val buffer = StringBuffer()
-
-            var line: String?
-            while (reader.readLine().also { line = it } != null) {
-                buffer.append(line)
+            val postData = JSONObject().apply {
+                put("uname", username)
+                put("password", password)
+                put("user_category", "operator")
+                put("user_id", "")
+                put("Content-Type", "application/json")
             }
-
-            val responseString = buffer.toString()
+            connection = makeHttpPostRequest(
+                "$urlString/auth/login",
+                postData.toString()
+            ) // Assign connection object to class member variable
+            val responseString = connection?.inputStream?.bufferedReader()?.readText()
             Log.d(TAG, "Response: $responseString")
 
             // Store session cookies
-            val cookies = connection!!.headerFields["Set-Cookie"]
+            val cookies = connection?.headerFields?.get("Set-Cookie")
             if (cookies != null) {
                 // Save cookies in shared preferences
                 val prefs = context.getSharedPreferences("cookies", Context.MODE_PRIVATE)
                 prefs.edit().putStringSet("session_cookies", cookies.toSet()).apply()
             }
 
-            reader.close()
-
-            if (connection!!.responseCode == HttpURLConnection.HTTP_OK) {
-                val jsonResponse = JSONObject(responseString)
-                success = jsonResponse.optBoolean("success")
+            if (connection?.responseCode ?: HttpURLConnection.HTTP_OK == HttpURLConnection.HTTP_OK) {
+                val jsonResponse = responseString?.let {
+                    JSONObject(it)
+                }
+                if (jsonResponse != null) {
+                    success = jsonResponse.optBoolean("success")
+                }
             } else {
-                Log.e(TAG, "Error logging in: ${connection!!.responseCode}")
+                Log.e(TAG, "Error logging in: ${connection?.responseCode}")
             }
         } catch (e: Exception) {
+            connection?.disconnect()
             Log.e(TAG, "Error logging in", e)
         }
 
         return success
     }
 
-    fun return_book(book_id: String): HttpResponse {
+    fun returnBook(book_id: String): HttpResponse {
         try {
-            val url = URL("$urlString/work/process")
+            val postData = JSONObject().apply {
+                put("returned_book_id", book_id)
+                put("user_id", "")
+                put("borrowed_book_id", "")
+            }.toString()
 
-            connection = url.openConnection() as HttpURLConnection
-            connection!!.requestMethod = "POST"
-            connection!!.doOutput = true
-
-            // Get the stored session cookies and add them to the request headers
             val storedCookies = getStoredCookies()
-            if (storedCookies != null) {
-                for (cookie in storedCookies) {
-                    connection!!.addRequestProperty("Cookie", cookie.split(";")[0])
+            connection = makeHttpPostRequest("$urlString/work/process", postData, storedCookies)
+
+            // Log the response
+            Log.d(TAG, "Response code: ${connection?.responseCode}")
+            val response = connection?.inputStream?.bufferedReader()?.readText()
+            Log.d(TAG, "Response body: $response")
+
+            if (connection?.responseCode == HttpURLConnection.HTTP_OK) {
+                val jsonResponse = response?.let {
+                    JSONObject(it)
                 }
-            }
-            Log.d(TAG, storedCookies.toString())
-
-            val postData = "returned_book_id=$book_id&user_id=&borrowed_book_id="
-            connection!!.outputStream.write(postData.toByteArray())
-
-            val reader = BufferedReader(InputStreamReader(connection!!.inputStream))
-            val buffer = StringBuffer()
-
-            var line: String?
-            while (reader.readLine().also { line = it } != null) {
-                buffer.append(line)
-            }
-
-            val responseString = buffer.toString()
-            Log.d(TAG, "Response: $responseString")
-
-            reader.close()
-
-            if (connection!!.responseCode == HttpURLConnection.HTTP_OK) {
-                val jsonResponse = JSONObject(responseString)
-                if (jsonResponse.optBoolean("success")) {
-                    val userJson = jsonResponse.optJSONObject("user")
-                    val user = if (userJson != null) Gson().fromJson(
-                        userJson.toString(),
-                        User::class.java
-                    ) else null
-                    val returnedBookTitle = jsonResponse.getString("returned_book_title")
-                    val returnedBookId = jsonResponse.getInt("returned_book_id")
-                    return HttpResponse(true, 0, user, returnedBookTitle, returnedBookId)
-                } else {
-                    var errorCode = jsonResponse.getInt("errcode")
-                    return HttpResponse(false, errorCode, null, "", 0)
+                if (jsonResponse != null) {
+                    return if (jsonResponse.optBoolean("success")) {
+                        val userJson = jsonResponse.optJSONObject("user")
+                        val user = if (userJson != null) Gson().fromJson(
+                            userJson.toString(),
+                            User::class.java
+                        ) else null
+                        val returnedBookTitle = jsonResponse.getString("returned_book_title")
+                        val returnedBookId = jsonResponse.getInt("returned_book_id")
+                        HttpResponse(true, 0, user, returnedBookTitle, returnedBookId, null)
+                    } else {
+                        val errorCode = jsonResponse.getInt("errcode")
+                        HttpResponse(false, errorCode, null, "", 0, null)
+                    }
                 }
-            } else {
-                Log.e(TAG, "Error return_book: ${connection!!.responseCode}")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Exception return_book", e)
         }
 
-        return HttpResponse(false, 0, null, "", 0)
+        throw Exception("connection error")
+    }
+
+    fun selectUser(user_id: String): HttpResponse {
+        try {
+            val postData = JSONObject().apply {
+                put("user_id", user_id)
+                put("book_id", "")
+                put("borrowed_book_id", "")
+            }.toString()
+
+            val storedCookies = getStoredCookies()
+            connection = makeHttpPostRequest("$urlString/work/process", postData, storedCookies)
+
+            // Log the response
+            Log.d(TAG, "Response code: ${connection?.responseCode}")
+            val response = connection?.inputStream?.bufferedReader()?.readText()
+            Log.d(TAG, "Response body: $response")
+
+            if (connection?.responseCode == HttpURLConnection.HTTP_OK) {
+                val jsonResponse = response?.let {
+                    JSONObject(it)
+                }
+                if (jsonResponse != null) {
+                    return if (jsonResponse.optBoolean("success")) {
+                        val userJson = jsonResponse.optJSONObject("user")
+                        val user = if (userJson != null) Gson().fromJson(
+                            userJson.toString(),
+                            User::class.java
+                        ) else null
+                        HttpResponse(true, 0, user, "", 0, null)
+                    } else {
+                        val errorCode = jsonResponse.getInt("errcode")
+                        HttpResponse(false, errorCode, null, "", 0, null)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception selecting user", e)
+        }
+
+        throw Exception("connection error")
+    }
+
+    fun borrowBook(book_id: String): HttpResponse {
+        try {
+            val postData = JSONObject().apply {
+                put("returned_book_id", "")
+                put("user_id", userId)
+                put("borrowed_book_id", book_id)
+            }
+
+            val storedCookies = getStoredCookies()
+            connection =
+                makeHttpPostRequest("$urlString/work/process", postData.toString(), storedCookies)
+
+            // Log the response
+            Log.d(TAG, "Response code: ${connection?.responseCode}")
+            val response = connection?.inputStream?.bufferedReader()?.readText()
+            Log.d(TAG, "Response body: $response")
+
+            if (connection?.responseCode == HttpURLConnection.HTTP_OK) {
+                val jsonResponse = response?.let {
+                    JSONObject(it)
+                }
+                if (jsonResponse != null) {
+                    return if (jsonResponse.optBoolean("success")) {
+                        val userJson = jsonResponse.optJSONObject("user")
+                        val user = if (userJson != null) Gson().fromJson(
+                            userJson.toString(),
+                            User::class.java
+                        ) else null
+                        val borrowedBookObject =
+                            jsonResponse.getJSONArray("borrowed_books").getJSONObject(0)
+                        var borrowedBook = BorrowedBook(
+                            borrowedBookObject.getInt("book_id"),
+                            borrowedBookObject.getString("book_title")
+                        )
+                        HttpResponse(true, 0, user, "", 0, borrowedBook)
+                    } else {
+                        val errorCode = jsonResponse.getInt("errcode")
+                        HttpResponse(false, errorCode, null, "", 0, null)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Exception borrowing book", e)
+        }
+
+        throw Exception("connection error")
     }
 
     private fun getStoredCookies(): Set<String>? {
@@ -137,4 +243,5 @@ class HttpUtility(private val context: Context) {
     fun disconnect() {
         connection?.disconnect()
     }
+
 }

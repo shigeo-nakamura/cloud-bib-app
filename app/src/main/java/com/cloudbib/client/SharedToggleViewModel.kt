@@ -2,10 +2,12 @@ package com.cloudbib.client
 
 import HttpUtility
 import android.app.Application
-import android.util.Log
-import androidx.navigation.fragment.navArgs
 import android.content.Context
-import androidx.lifecycle.*
+import android.util.Log
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -53,7 +55,7 @@ class SharedToggleViewModel(application: Application) : AndroidViewModel(applica
                     return@launch
                 } else {
                     // Notify the activity or fragment of the login error
-                    loginError.value = "接続できませんでした"
+                    loginError.value = "ログインできませんでした"
                 }
             } else {
                 Log.d(TAG, "disconnect")
@@ -70,7 +72,10 @@ class SharedToggleViewModel(application: Application) : AndroidViewModel(applica
     }
 
     private fun setDefaultValues() {
-        val sharedPref = getApplication<Application>().applicationContext.getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
+        val sharedPref = getApplication<Application>().applicationContext.getSharedPreferences(
+            "my_prefs",
+            Context.MODE_PRIVATE
+        )
         url = sharedPref.getString("server", null)
         username = sharedPref.getString("userName", null)
         password = sharedPref.getString("password", null)
