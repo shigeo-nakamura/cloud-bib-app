@@ -1,6 +1,6 @@
 package com.cloudbib.client.ui.`return`
 
-import android.app.Activity
+import android.Manifest
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -20,8 +20,6 @@ import com.cloudbib.client.R
 import com.cloudbib.client.SharedToggleViewModel
 import com.cloudbib.client.databinding.FragmentReturnBinding
 import com.google.zxing.integration.android.IntentIntegrator
-import android.Manifest
-import androidx.activity.result.ActivityResultLauncher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -82,14 +80,15 @@ class ReturnFragment : Fragment() {
                 CoroutineScope(Dispatchers.Main).launch {
                     try {
                         val res = withContext(Dispatchers.IO) {
-                            httpUtility.return_book(symbol)
+                            httpUtility.returnBook(symbol)
                         }
                         Log.d(TAG, res.toString())
                         var statusView = requireView().findViewById<TextView>(R.id.statusView)
 
                         if (res.success) {
                             statusView.text = "返却しました"
-                            requireView().findViewById<TextView>(R.id.returnerView).text = res.user?.name
+                            requireView().findViewById<TextView>(R.id.returnerView).text =
+                                res.user?.name
                             requireView().findViewById<TextView>(R.id.titleView).text =
                                 res.returned_book_title
                         } else {
@@ -99,7 +98,8 @@ class ReturnFragment : Fragment() {
                                 }
                                 111 -> {
                                     statusView.text = "この本は貸出されていません"
-                                    requireView().findViewById<TextView>(R.id.returnerView).text = ""
+                                    requireView().findViewById<TextView>(R.id.returnerView).text =
+                                        ""
                                     requireView().findViewById<TextView>(R.id.titleView).text = ""
                                 }
                                 else -> {
@@ -110,13 +110,13 @@ class ReturnFragment : Fragment() {
                     } catch (e: Exception) {
                         // Handle the exception
                         Log.e(TAG, "Exception while returning book: ${e.message}")
+                        sharedViewModel.setToggleState(false)
                     }
                 }
             } else {
                 Log.d(TAG, "symbol not found")
             }
         }
-
 
 
         val textView: TextView = binding.textReturn
@@ -157,7 +157,6 @@ class ReturnFragment : Fragment() {
 
         return root
     }
-
 
 
     // Call this function to start the barcode scanning

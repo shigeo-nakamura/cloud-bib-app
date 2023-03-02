@@ -4,5 +4,5 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:checked="false"
-    android:textOff="接続する"
-    android:textOn="切断する" />
+    android:textOff="ログイン"
+    android:textOn="ログアウト" />

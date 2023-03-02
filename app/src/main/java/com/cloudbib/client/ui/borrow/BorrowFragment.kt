@@ -25,6 +25,8 @@ class BorrowFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var toggleButton: ToggleButton
 
+    private var userId: String? = null
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -71,7 +73,14 @@ class BorrowFragment : Fragment() {
             toggleButton.isChecked = state ?: false
         }
 
+        val buttonSelectUser = binding.buttonSelectUser
+        buttonSelectUser.isEnabled = sharedViewModel.getToggleState().value ?: false
+        sharedViewModel.getToggleState().observe(viewLifecycleOwner) { state ->
+            buttonSelectUser.isEnabled = state ?: false
+        }
 
+        val borrowButton = binding.buttonBorrow
+        borrowButton.isEnabled = userId != null
 
         return root
     }

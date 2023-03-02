@@ -1,8 +1,6 @@
 package com.cloudbib.client
 
-import android.content.Intent
 import android.os.Bundle
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
@@ -10,6 +8,7 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.cloudbib.client.databinding.ActivityMainBinding
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.snackbar.Snackbar
 
 class MainActivity : AppCompatActivity() {
@@ -39,19 +38,8 @@ class MainActivity : AppCompatActivity() {
         val sharedViewModel = ViewModelProvider(this).get(SharedToggleViewModel::class.java)
 
         // Observe the loginError LiveData object
-        sharedViewModel.getLoginError().observe(this, { error ->
+        sharedViewModel.getLoginError().observe(this) { error ->
             Snackbar.make(binding.root, error, Snackbar.LENGTH_SHORT).show()
-        })
+        }
     }
-
-//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-//        super.onActivityResult(requestCode, resultCode, data)
-//
-//        // Forward the onActivityResult callback to the child fragment
-//        val fragment =
-//            supportFragmentManager.findFragmentById(R.id.nav_host_fragment_activity_main)?.childFragmentManager?.fragments?.get(0)
-//
-//        fragment?.onActivityResult(requestCode, resultCode, data)
-//    }
-
 }
