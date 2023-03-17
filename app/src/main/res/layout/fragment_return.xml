@@ -42,24 +42,21 @@
         android:id="@+id/statusLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="48dp"
-        android:layout_marginEnd="321dp"
         android:text="ステータス"
         app:layout_constraintBottom_toTopOf="@+id/statusView"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/button_return" />
 
     <TextView
         android:id="@+id/returnerLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="22dp"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="347dp"
         android:text="返却者"
         app:layout_constraintBottom_toTopOf="@+id/returnerView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/statusView" />
 
@@ -67,13 +64,10 @@
         android:id="@+id/titleLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="22dp"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="333dp"
         android:text="タイトル"
         app:layout_constraintBottom_toTopOf="@+id/titleView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/returnerView" />
 
@@ -81,13 +75,11 @@
         android:id="@+id/statusView"
         android:layout_width="376dp"
         android:layout_height="50dp"
-        android:layout_marginStart="21dp"
-        android:layout_marginEnd="14dp"
+        android:layout_marginStart="16dp"
         android:layout_marginBottom="16dp"
         android:textColor="@color/black"
         android:textSize="20sp"
         app:layout_constraintBottom_toTopOf="@+id/returnerLabel"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/statusLabel" />
 
@@ -95,13 +87,11 @@
         android:id="@+id/returnerView"
         android:layout_width="376dp"
         android:layout_height="50dp"
-        android:layout_marginStart="21dp"
-        android:layout_marginEnd="14dp"
+        android:layout_marginStart="16dp"
         android:layout_marginBottom="16dp"
         android:textColor="@color/black"
         android:textSize="20sp"
         app:layout_constraintBottom_toTopOf="@+id/titleLabel"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/returnerLabel" />
 
@@ -109,11 +99,9 @@
         android:id="@+id/titleView"
         android:layout_width="376dp"
         android:layout_height="50dp"
-        android:layout_marginStart="21dp"
-        android:layout_marginEnd="14dp"
+        android:layout_marginStart="16dp"
         android:textColor="@color/black"
         android:textSize="20sp"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/titleLabel" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -32,6 +32,12 @@ class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
 
     private lateinit var barcodeScanner: BarcodeScanner
 
+    private fun clearReturnField() {
+        requireView().findViewById<TextView>(R.id.statusView).text = ""
+        requireView().findViewById<TextView>(R.id.titleView).text = ""
+        requireView().findViewById<TextView>(R.id.returnerView).text = ""
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -79,6 +85,9 @@ class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
         buttonReturn.isEnabled = sharedViewModel.getToggleState().value ?: false
         sharedViewModel.getToggleState().observe(viewLifecycleOwner) { state ->
             buttonReturn.isEnabled = state ?: false
+            if (!state) {
+                clearReturnField()
+            }
         }
 
         buttonReturn.setOnClickListener {
@@ -92,9 +101,7 @@ class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
     private fun startBarcodeScanning() {
         Log.d(TAG, "startBarcodeScanning")
 
-        requireView().findViewById<TextView>(R.id.statusView).text = ""
-        requireView().findViewById<TextView>(R.id.returnerView).text = ""
-        requireView().findViewById<TextView>(R.id.titleView).text = ""
+        clearReturnField()
 
         // Start the barcode scanning process using the BarcodeScanner
         barcodeScanner.start("buttonReturn")
@@ -102,14 +109,13 @@ class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
 
     override fun onBarcodeScanned(barcode: String?, fromButton: String) {
         Log.d(TAG, "onBarcodeScanned")
-        // Barcode was successfully scanned
-        val symbol = barcode
-        Log.d(TAG, "find : $symbol")
+
+        Log.d(TAG, "find : $barcode")
         val sharedViewModel =
             ViewModelProvider(requireActivity()).get(SharedToggleViewModel::class.java)
         val httpUtility = sharedViewModel.getHttpUtility()
 
-        if (symbol == null) {
+        if (barcode == null) {
             Log.d(TAG, "symbol not found")
             return
         }
@@ -118,7 +124,7 @@ class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val res = withContext(Dispatchers.IO) {
-                    httpUtility.returnBook(symbol)
+                    httpUtility.returnBook(barcode)
                 }
                 Log.d(TAG, res.toString())
                 var statusView = requireView().findViewById<TextView>(R.id.statusView)

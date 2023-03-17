@@ -15,9 +15,10 @@ class HttpResponse(
     val success: Boolean,
     val errorCode: Int,
     val user: User?,
-    var returned_book_title: String,
+    val returned_book_title: String,
     val returned_book_id: Int,
     val borrowed_book: BorrowedBook?,
+    val num_borrowed_book: Int,
 )
 
 class HttpUtility(private val context: Context) {
@@ -37,6 +38,8 @@ class HttpUtility(private val context: Context) {
         connection.doInput = true
         connection.doOutput = true
         connection.useCaches = false
+
+        Log.d(TAG, "urlString=$urlString, postData=$postData")
 
         // Set request properties
         connection.setRequestProperty("Content-Type", "application/json")
@@ -132,10 +135,10 @@ class HttpUtility(private val context: Context) {
                         ) else null
                         val returnedBookTitle = jsonResponse.getString("returned_book_title")
                         val returnedBookId = jsonResponse.getInt("returned_book_id")
-                        HttpResponse(true, 0, user, returnedBookTitle, returnedBookId, null)
+                        HttpResponse(true, 0, user, returnedBookTitle, returnedBookId, null, 0)
                     } else {
                         val errorCode = jsonResponse.getInt("errcode")
-                        HttpResponse(false, errorCode, null, "", 0, null)
+                        HttpResponse(false, errorCode, null, "", 0, null, 0)
                     }
                 }
             }
@@ -150,7 +153,7 @@ class HttpUtility(private val context: Context) {
         try {
             val postData = JSONObject().apply {
                 put("user_id", user_id)
-                put("book_id", "")
+                put("returned_book_id", "")
                 put("borrowed_book_id", "")
             }.toString()
 
@@ -173,10 +176,16 @@ class HttpUtility(private val context: Context) {
                             userJson.toString(),
                             User::class.java
                         ) else null
-                        HttpResponse(true, 0, user, "", 0, null)
+                        var numBorrowedBook = 0
+                        if (user != null) {
+                            userId = user.id.toString()
+                            numBorrowedBook =
+                                jsonResponse.getJSONArray("borrowed_books").length()
+                        }
+                        HttpResponse(true, 0, user, "", 0, null, numBorrowedBook)
                     } else {
                         val errorCode = jsonResponse.getInt("errcode")
-                        HttpResponse(false, errorCode, null, "", 0, null)
+                        HttpResponse(false, errorCode, null, "", 0, null, 0)
                     }
                 }
             }
@@ -190,10 +199,10 @@ class HttpUtility(private val context: Context) {
     fun borrowBook(book_id: String): HttpResponse {
         try {
             val postData = JSONObject().apply {
-                put("returned_book_id", "")
                 put("user_id", userId)
+                put("returned_book_id", "")
                 put("borrowed_book_id", book_id)
-            }
+            }.toString()
 
             val storedCookies = getStoredCookies()
             connection =
@@ -215,16 +224,18 @@ class HttpUtility(private val context: Context) {
                             userJson.toString(),
                             User::class.java
                         ) else null
+                        val borrowedBookObjects =
+                            jsonResponse.getJSONArray("borrowed_books")
                         val borrowedBookObject =
-                            jsonResponse.getJSONArray("borrowed_books").getJSONObject(0)
+                            borrowedBookObjects.getJSONObject(0)
                         var borrowedBook = BorrowedBook(
                             borrowedBookObject.getInt("book_id"),
                             borrowedBookObject.getString("book_title")
                         )
-                        HttpResponse(true, 0, user, "", 0, borrowedBook)
+                        HttpResponse(true, 0, user, "", 0, borrowedBook,  borrowedBookObjects.length())
                     } else {
                         val errorCode = jsonResponse.getInt("errcode")
-                        HttpResponse(false, errorCode, null, "", 0, null)
+                        HttpResponse(false, errorCode, null, "", 0, null, 0)
                     }
                 }
             }

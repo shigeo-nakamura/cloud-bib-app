@@ -1,5 +1,6 @@
 import android.Manifest
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.util.Log
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultCallback
@@ -28,6 +29,7 @@ class BarcodeScanner(
 
     private lateinit var barcodeScanLauncher: ActivityResultLauncher<Intent>
     private lateinit var cameraPermissionLauncher: ActivityResultLauncher<String>
+    private var originalOrientation = 0
 
     init {
         cameraPermissionLauncher = fragment.registerForActivityResult(
@@ -52,6 +54,8 @@ class BarcodeScanner(
             } else {
                 listener.onScanFailed()
             }
+            // Restore the original orientation after the scan is complete
+            //fragment.requireActivity().requestedOrientation = originalOrientation
         }
     }
 
@@ -77,8 +81,10 @@ class BarcodeScanner(
     private fun launchBarcodeScanner() {
         Log.d(TAG, "launchBarcodeScanner")
 
+        originalOrientation = fragment.requireActivity().requestedOrientation
         val integrator = IntentIntegrator.forSupportFragment(fragment)
-        integrator.setOrientationLocked(false)
+        fragment.requireActivity().requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        //integrator.setOrientationLocked(true)
         integrator.setPrompt("Scan a barcode")
         integrator.setBeepEnabled(false)
         integrator.setDesiredBarcodeFormats(IntentIntegrator.ALL_CODE_TYPES)
