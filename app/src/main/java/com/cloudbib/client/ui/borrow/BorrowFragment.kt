@@ -1,7 +1,7 @@
 package com.cloudbib.client.ui.borrow
 
 import BarcodeScanner
-import BaseFragment
+import androidx.fragment.app.Fragment
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
@@ -18,7 +18,7 @@ import com.cloudbib.client.R
 import com.cloudbib.client.SharedToggleViewModel
 import com.cloudbib.client.databinding.FragmentBorrowBinding
 
-class BorrowFragment : BaseFragment(), BarcodeScanner.OnBarcodeScannedListener {
+class BorrowFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
 
     private val TAG = "BorrowFragment"
     private var _binding: FragmentBorrowBinding? = null
@@ -103,10 +103,5 @@ class BorrowFragment : BaseFragment(), BarcodeScanner.OnBarcodeScannedListener {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-
-    companion object {
-        private const val CAMERA_PERMISSION_REQUEST_CODE = 123
     }
 }
