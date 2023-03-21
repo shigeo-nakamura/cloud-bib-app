@@ -1,7 +1,5 @@
 package com.cloudbib.client.ui.borrow
 
-import com.cloudbib.client.BarcodeScanner
-import com.cloudbib.client.HttpResponse
 import androidx.fragment.app.Fragment
 import android.os.Bundle
 import android.util.Log
@@ -11,13 +9,63 @@ import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.ToggleButton
 import androidx.lifecycle.ViewModelProvider
-import com.cloudbib.client.R
-import com.cloudbib.client.SharedToggleViewModel
+import com.cloudbib.client.*
 import com.cloudbib.client.databinding.FragmentBorrowBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.cloudbib.client.BarcodeScannerViewModel
+
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+
+class BorrowFragmentViewModel : ViewModel() {
+    private val _unameViewText = MutableLiveData<String>().apply { value = "" }
+    val unameViewText: LiveData<String> = _unameViewText
+
+    private val _numBookViewText = MutableLiveData<String>().apply { value = "" }
+    val numBookViewText: LiveData<String> = _numBookViewText
+
+    private val _borrowStatusViewText = MutableLiveData<String>().apply { value = "" }
+    val borrowStatusViewText: LiveData<String> = _borrowStatusViewText
+
+    private val _borrowTitleViewText = MutableLiveData<String>().apply { value = "" }
+    val borrowTitleViewText: LiveData<String> = _borrowTitleViewText
+
+    // Add this variable to keep track of the state of the buttonBorrow
+    private val _isButtonBorrowEnabled = MutableLiveData<Boolean>().apply { value = false }
+    val isButtonBorrowEnabled: LiveData<Boolean> = _isButtonBorrowEnabled
+
+    // Update the value of isButtonBorrowEnabled when the button is enabled or disabled
+    fun setButtonBorrowEnabled(isEnabled: Boolean) {
+        _isButtonBorrowEnabled.value = isEnabled
+    }
+
+    fun setUnameViewText(text: String) {
+        _unameViewText.value = text
+    }
+
+    fun setNumBookViewText(text: String) {
+        _numBookViewText.value = text
+    }
+
+    fun setBorrowStatusViewText(text: String) {
+        _borrowStatusViewText.value = text
+    }
+
+    fun setBorrowTitleViewText(text: String) {
+        _borrowTitleViewText.value = text
+    }
+
+    fun clearTextFields() {
+        setUnameViewText("")
+        setNumBookViewText("")
+        setBorrowStatusViewText("")
+        setBorrowTitleViewText("")
+    }
+}
 
 class BorrowFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
 
@@ -29,26 +77,28 @@ class BorrowFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
     private var userId: String? = null
 
     private lateinit var barcodeScanner: BarcodeScanner
+    private lateinit var borrowFragmentViewModel: BorrowFragmentViewModel
+    private lateinit var barcodeScannerViewModel: BarcodeScannerViewModel
 
     private fun clearUserField() {
-        requireView().findViewById<TextView>(R.id.unameView).text = ""
-        requireView().findViewById<TextView>(R.id.numBookView).text =" "
+        borrowFragmentViewModel.setUnameViewText("")
+        borrowFragmentViewModel.setNumBookViewText("")
     }
 
     private fun clearBorrowState() {
-        requireView().findViewById<TextView>(R.id.borrowStatusView).text = ""
-        requireView().findViewById<TextView>(R.id.borrowTitleView).text = " "
+        borrowFragmentViewModel.setBorrowStatusViewText("")
+        borrowFragmentViewModel.setBorrowTitleViewText("")
     }
 
     private fun updateUserField(res: HttpResponse) {
-        requireView().findViewById<TextView>(R.id.unameView).text = res.user?.name.toString()
-        requireView().findViewById<TextView>(R.id.numBookView).text = res.num_borrowed_book.toString()
+        borrowFragmentViewModel.setUnameViewText(res.user?.name.toString())
+        borrowFragmentViewModel.setNumBookViewText(res.num_borrowed_book.toString())
     }
 
     private fun updateBorrowField(res: HttpResponse) {
-        requireView().findViewById<TextView>(R.id.numBookView).text = res.num_borrowed_book.toString()
-        requireView().findViewById<TextView>(R.id.borrowTitleView).text = res.borrowed_book?.title.toString()
-        requireView().findViewById<TextView>(R.id.borrowStatusView).text = "貸出処理が完了しました"
+        borrowFragmentViewModel.setNumBookViewText(res.num_borrowed_book.toString())
+        borrowFragmentViewModel.setBorrowTitleViewText(res.borrowed_book?.title.toString())
+        borrowFragmentViewModel.setBorrowStatusViewText("貸出処理が完了しました")
     }
 
     override fun onBarcodeScanned(barcode: String?, fromButton: String) {
@@ -83,7 +133,9 @@ class BorrowFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
                 if (res.success) {
                     if (fromButton == "buttonSelectUser") {
                         updateUserField(res)
-                        binding.buttonBorrow.isEnabled = true
+                        Log.d(tag, "enabled the buttonBorrow")
+                        // Set the value of isButtonBorrowEnabled to true and enable the buttonBorrow
+                        borrowFragmentViewModel.setButtonBorrowEnabled(true)
                     } else {
                         updateBorrowField(res)
                     }
@@ -118,8 +170,9 @@ class BorrowFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize the barcode scanner with the fragment and listener
-        barcodeScanner = BarcodeScanner(this, this)
+        // Initialize the BarcodeScannerViewModel and the BarcodeScanner with the ViewModel instance
+        barcodeScannerViewModel = ViewModelProvider(this)[BarcodeScannerViewModel::class.java]
+        barcodeScanner = BarcodeScanner(this, barcodeScannerViewModel, this)
     }
 
     override fun onCreateView(
@@ -150,6 +203,24 @@ class BorrowFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
             }
         }
 
+        borrowFragmentViewModel = ViewModelProvider(this)[BorrowFragmentViewModel::class.java]
+
+        borrowFragmentViewModel.unameViewText.observe(viewLifecycleOwner) { text ->
+            binding.unameView.text = text
+        }
+
+        borrowFragmentViewModel.numBookViewText.observe(viewLifecycleOwner) { text ->
+            binding.numBookView.text = text
+        }
+
+        borrowFragmentViewModel.borrowStatusViewText.observe(viewLifecycleOwner) { text ->
+            binding.borrowStatusView.text = text
+        }
+
+        borrowFragmentViewModel.borrowTitleViewText.observe(viewLifecycleOwner) { text ->
+            binding.borrowTitleView.text = text
+        }
+
         val buttonSelectUser = binding.buttonSelectUser
         val buttonBorrow = binding.buttonBorrow
         // Observe the state of the shared view model and update the state of the toggle button when it changes
@@ -163,24 +234,31 @@ class BorrowFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
             }
         }
 
-        binding.buttonBorrow.isEnabled = false
+        // Observe the state of isButtonBorrowEnabled and update the buttonBorrow accordingly
+        borrowFragmentViewModel.isButtonBorrowEnabled.observe(viewLifecycleOwner) { isEnabled ->
+            binding.buttonBorrow.isEnabled = isEnabled
+        }
 
         buttonSelectUser.setOnClickListener {
             clearUserField()
             clearBorrowState()
             binding.buttonBorrow.isEnabled = false
-            barcodeScanner.start("buttonSelectUser")
+            barcodeScannerViewModel.fromButton = "buttonSelectUser"
+            barcodeScanner.start(barcodeScannerViewModel.fromButton!!)
         }
 
         buttonBorrow.setOnClickListener {
             clearBorrowState()
-            barcodeScanner.start("buttonBorrow")
+            barcodeScannerViewModel.fromButton = "buttonBorrow"
+            barcodeScanner.start(barcodeScannerViewModel.fromButton!!)
+
         }
 
         return root
     }
 
     override fun onDestroyView() {
+        Log.d(tag, "onDestroyView")
         super.onDestroyView()
         _binding = null
     }

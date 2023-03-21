@@ -17,6 +17,39 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.cloudbib.client.BarcodeScannerViewModel
+
+class ReturnTextFieldsViewModel : ViewModel() {
+    private val _statusViewText = MutableLiveData<String>().apply { value = "" }
+    val statusViewText: LiveData<String> = _statusViewText
+
+    private val _titleViewText = MutableLiveData<String>().apply { value = "" }
+    val titleViewText: LiveData<String> = _titleViewText
+
+    private val _returnerViewText = MutableLiveData<String>().apply { value = "" }
+    val returnerViewText: LiveData<String> = _returnerViewText
+
+    fun setStatusViewText(text: String) {
+        _statusViewText.value = text
+    }
+
+    fun setTitleViewText(text: String) {
+        _titleViewText.value = text
+    }
+
+    fun setReturnerViewText(text: String) {
+        _returnerViewText.value = text
+    }
+
+    fun clearTextFields() {
+        setStatusViewText("")
+        setTitleViewText("")
+        setReturnerViewText("")
+    }
+}
 
 class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
     private val tag = "ReturnFragment"
@@ -26,18 +59,21 @@ class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
     private val binding get() = _binding!!
 
     private lateinit var barcodeScanner: BarcodeScanner
+    private lateinit var returnTextFieldsViewModel: ReturnTextFieldsViewModel
+    private lateinit var barcodeScannerViewModel: BarcodeScannerViewModel
+
 
     private fun clearReturnField() {
-        requireView().findViewById<TextView>(R.id.statusView).text = ""
-        requireView().findViewById<TextView>(R.id.titleView).text = ""
-        requireView().findViewById<TextView>(R.id.returnerView).text = ""
+        Log.d(tag, "clearReturnField")
+        returnTextFieldsViewModel.clearTextFields()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize the barcode scanner with the fragment and listener
-        barcodeScanner = BarcodeScanner(this, this)
+        // Initialize the BarcodeScannerViewModel and the BarcodeScanner with the ViewModel instance
+        barcodeScannerViewModel = ViewModelProvider(this)[BarcodeScannerViewModel::class.java]
+        barcodeScanner = BarcodeScanner(this, barcodeScannerViewModel, this)
     }
 
     override fun onCreateView(
@@ -54,6 +90,23 @@ class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
         returnViewModel.text.observe(viewLifecycleOwner) {
             textView.text = it
         }
+
+        returnTextFieldsViewModel =
+            ViewModelProvider(this)[ReturnTextFieldsViewModel::class.java]
+
+        returnTextFieldsViewModel.statusViewText.observe(viewLifecycleOwner) {
+            binding.statusView.text = it
+        }
+
+        returnTextFieldsViewModel.titleViewText.observe(viewLifecycleOwner) {
+            binding.titleView.text = it
+        }
+
+        returnTextFieldsViewModel.returnerViewText.observe(viewLifecycleOwner) {
+            binding.returnerView.text = it
+        }
+
+        barcodeScannerViewModel = ViewModelProvider(this)[BarcodeScannerViewModel::class.java]
 
         val toggleButton = binding.root.findViewById<ToggleButton>(R.id.connection_toggle)
 
@@ -98,8 +151,11 @@ class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
 
         clearReturnField()
 
+        // Set the fromButton value in the ViewModel
+        barcodeScannerViewModel.fromButton = "buttonReturn"
+
         // Start the barcode scanning process using the com.cloudbib.client.BarcodeScanner
-        barcodeScanner.start("buttonReturn")
+        barcodeScanner.start(barcodeScannerViewModel.fromButton!!)
     }
 
     override fun onBarcodeScanned(barcode: String?, fromButton: String) {
@@ -122,27 +178,23 @@ class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
                     httpUtility.returnBook(barcode)
                 }
                 Log.d(tag, res.toString())
-                val statusView = requireView().findViewById<TextView>(R.id.statusView)
 
                 if (res.success) {
-                    statusView.text = "返却しました"
-                    requireView().findViewById<TextView>(R.id.returnerView).text =
-                        res.user?.name
-                    requireView().findViewById<TextView>(R.id.titleView).text =
-                        res.returned_book_title
+                    returnTextFieldsViewModel.setStatusViewText("返却しました")
+                    returnTextFieldsViewModel.setReturnerViewText(res.user?.name ?: "")
+                    returnTextFieldsViewModel.setTitleViewText(res.returned_book_title)
                 } else {
                     when (res.errorCode) {
                         107 -> {
-                            statusView.text = "該当図書が見つかりません"
+                            returnTextFieldsViewModel.setStatusViewText("該当図書が見つかりません")
                         }
                         111 -> {
-                            statusView.text = "この本は貸出されていません"
-                            requireView().findViewById<TextView>(R.id.returnerView).text =
-                                ""
-                            requireView().findViewById<TextView>(R.id.titleView).text = ""
+                            returnTextFieldsViewModel.setStatusViewText("この本は貸出されていません")
+                            returnTextFieldsViewModel.setReturnerViewText("")
+                            returnTextFieldsViewModel.setTitleViewText("")
                         }
                         else -> {
-                            statusView.text = "データが見つかりません"
+                            returnTextFieldsViewModel.setStatusViewText("データが見つかりません")
                         }
                     }
                 }

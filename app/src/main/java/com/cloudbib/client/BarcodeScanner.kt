@@ -10,13 +10,19 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import com.google.zxing.integration.android.IntentIntegrator
+import androidx.lifecycle.ViewModel
+
+class BarcodeScannerViewModel : ViewModel() {
+    var fromButton: String? = null
+}
 
 class BarcodeScanner(
     private val fragment: Fragment,
+    private val viewModel: BarcodeScannerViewModel,
     private val listener: OnBarcodeScannedListener
 ) {
     private val tag = "com.cloudbib.client.BarcodeScanner"
-    private var fromButton = ""
+    private var fromButton: String? = null
 
     interface OnBarcodeScannedListener {
         fun onBarcodeScanned(barcode: String?, fromButton: String)
@@ -44,9 +50,13 @@ class BarcodeScanner(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
             val scanResult =
-                IntentIntegrator.parseActivityResult(result.resultCode, result.data)
+            IntentIntegrator.parseActivityResult(result.resultCode, result.data)
             if (scanResult != null && scanResult.contents != null) {
-                listener.onBarcodeScanned(scanResult.contents, fromButton)
+                if (viewModel.fromButton == null) {
+                    Log.d(tag, "fromButton is null")
+                } else {
+                    listener.onBarcodeScanned(scanResult.contents, viewModel.fromButton!!)
+                }
             } else {
                 listener.onScanFailed()
             }
@@ -56,7 +66,7 @@ class BarcodeScanner(
     }
 
     fun start(fromButton: String) {
-        Log.d(tag, "start")
+        Log.d(tag, "start: $fromButton")
 
         this@BarcodeScanner.fromButton = fromButton
 
