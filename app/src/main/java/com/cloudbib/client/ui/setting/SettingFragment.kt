@@ -14,7 +14,7 @@ import com.google.android.material.snackbar.Snackbar
 
 class SettingFragment : Fragment() {
 
-    private val TAG = "SettingFragment"
+    private val tag = "SettingFragment"
     private var _binding: FragmentSettingBinding? = null
     private lateinit var settingViewModel: SettingViewModel
 
@@ -33,7 +33,7 @@ class SettingFragment : Fragment() {
         binding.server.setText(savedServer)
 
         if (savedServer != null && savedUserName != null && savedPassword != null) {
-            val sharedViewModel = ViewModelProvider(requireActivity()).get(SharedToggleViewModel::class.java)
+            val sharedViewModel = ViewModelProvider(requireActivity())[SharedToggleViewModel::class.java]
             sharedViewModel.setLoginCredentials(savedServer, savedUserName, savedPassword)
         }
     }
@@ -43,7 +43,7 @@ class SettingFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        settingViewModel = ViewModelProvider(this).get(SettingViewModel::class.java)
+        settingViewModel = ViewModelProvider(this)[SettingViewModel::class.java]
 
         _binding = FragmentSettingBinding.inflate(inflater, container, false)
         val root: View = binding.root
@@ -65,12 +65,12 @@ class SettingFragment : Fragment() {
                 this?.apply()
             }
 
-            val sharedViewModel = ViewModelProvider(requireActivity()).get(SharedToggleViewModel::class.java)
+            val sharedViewModel = ViewModelProvider(requireActivity())[SharedToggleViewModel::class.java]
             sharedViewModel.setLoginCredentials(server, userName, password)
 
-            Log.d(TAG, "saved")
+            Log.d(tag, "saved")
 
-            // Show a Snackbar to indicate that the settings were saved
+            // Show a Snack bar to indicate that the settings were saved
             Snackbar.make(view ?: return@setOnClickListener, "保存しました", Snackbar.LENGTH_SHORT).show()
         }
 

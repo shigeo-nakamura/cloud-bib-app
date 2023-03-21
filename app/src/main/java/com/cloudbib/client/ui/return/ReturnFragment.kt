@@ -1,6 +1,6 @@
 package com.cloudbib.client.ui.`return`
 
-import BarcodeScanner
+import com.cloudbib.client.BarcodeScanner
 import androidx.fragment.app.Fragment
 import android.os.Bundle
 import android.util.Log
@@ -19,12 +19,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
-
-    companion object {
-        private const val CAMERA_PERMISSION_REQUEST_CODE = 1
-    }
-
-    private val TAG = "ReturnFragment"
+    private val tag = "ReturnFragment"
     private var _binding: FragmentReturnBinding? = null
 
     // This property is only valid between onCreateView and onDestroyView.
@@ -50,7 +45,7 @@ class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val returnViewModel = ViewModelProvider(this).get(ReturnViewModel::class.java)
+        val returnViewModel = ViewModelProvider(this)[ReturnViewModel::class.java]
 
         _binding = FragmentReturnBinding.inflate(inflater, container, false)
         val root: View = binding.root
@@ -63,7 +58,7 @@ class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
         val toggleButton = binding.root.findViewById<ToggleButton>(R.id.connection_toggle)
 
         val sharedViewModel =
-            ViewModelProvider(requireActivity()).get(SharedToggleViewModel::class.java)
+            ViewModelProvider(requireActivity())[SharedToggleViewModel::class.java]
 
         toggleButton.post {
             val toggleState = sharedViewModel.getToggleState().value ?: false
@@ -99,24 +94,24 @@ class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
 
     // Call this function to start the barcode scanning
     private fun startBarcodeScanning() {
-        Log.d(TAG, "startBarcodeScanning")
+        Log.d(tag, "startBarcodeScanning")
 
         clearReturnField()
 
-        // Start the barcode scanning process using the BarcodeScanner
+        // Start the barcode scanning process using the com.cloudbib.client.BarcodeScanner
         barcodeScanner.start("buttonReturn")
     }
 
     override fun onBarcodeScanned(barcode: String?, fromButton: String) {
-        Log.d(TAG, "onBarcodeScanned")
+        Log.d(tag, "onBarcodeScanned")
 
-        Log.d(TAG, "find : $barcode")
+        Log.d(tag, "find : $barcode")
         val sharedViewModel =
-            ViewModelProvider(requireActivity()).get(SharedToggleViewModel::class.java)
+            ViewModelProvider(requireActivity())[SharedToggleViewModel::class.java]
         val httpUtility = sharedViewModel.getHttpUtility()
 
         if (barcode == null) {
-            Log.d(TAG, "symbol not found")
+            Log.d(tag, "symbol not found")
             return
         }
 
@@ -126,8 +121,8 @@ class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
                 val res = withContext(Dispatchers.IO) {
                     httpUtility.returnBook(barcode)
                 }
-                Log.d(TAG, res.toString())
-                var statusView = requireView().findViewById<TextView>(R.id.statusView)
+                Log.d(tag, res.toString())
+                val statusView = requireView().findViewById<TextView>(R.id.statusView)
 
                 if (res.success) {
                     statusView.text = "返却しました"
@@ -153,18 +148,18 @@ class ReturnFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
                 }
             } catch (e: Exception) {
                 // Handle the exception
-                Log.e(TAG, "Exception while returning book: ${e.message}")
+                Log.e(tag, "Exception while returning book: ${e.message}")
                 sharedViewModel.setToggleState(false)
             }
         }
     }
 
     override fun onScanFailed() {
-        Log.d(TAG, "symbol not found")
+        Log.d(tag, "symbol not found")
     }
 
     override fun onDestroyView() {
-        Log.d(TAG, "onDestroyView")
+        Log.d(tag, "onDestroyView")
         super.onDestroyView()
         _binding = null
     }

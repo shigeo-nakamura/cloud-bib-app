@@ -1,6 +1,5 @@
 package com.cloudbib.client
 
-import HttpUtility
 import android.app.Application
 import android.content.Context
 import android.util.Log
@@ -13,7 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class SharedToggleViewModel(application: Application) : AndroidViewModel(application) {
-    private val TAG = "SharedToggle"
+    private val tag = "SharedToggle"
     private var url: String? = null
     private var username: String? = null
     private var password: String? = null
@@ -42,7 +41,7 @@ class SharedToggleViewModel(application: Application) : AndroidViewModel(applica
 
         viewModelScope.launch {
             if (state) {
-                Log.d(TAG, "connect")
+                Log.d(tag, "connect")
                 val loginSuccess = withContext(Dispatchers.IO) {
                     url != null && username != null && password != null && httpUtility.login(
                         url!!,
@@ -58,7 +57,7 @@ class SharedToggleViewModel(application: Application) : AndroidViewModel(applica
                     loginError.value = "ログインできませんでした"
                 }
             } else {
-                Log.d(TAG, "disconnect")
+                Log.d(tag, "disconnect")
                 httpUtility.disconnect()
             }
             toggleState.value = false

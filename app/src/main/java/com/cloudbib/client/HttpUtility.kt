@@ -1,3 +1,5 @@
+package com.cloudbib.client
+
 import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
@@ -22,10 +24,10 @@ class HttpResponse(
 )
 
 class HttpUtility(private val context: Context) {
-    private val TAG = "HttpUtility"
+    private val tag = "com.cloudbib.client.HttpUtility"
     private var connection: HttpURLConnection? = null
     private var urlString: String? = null
-    var userId: String? = null
+    private var userId: String? = null
 
     private fun makeHttpPostRequest(
         urlString: String,
@@ -39,7 +41,7 @@ class HttpUtility(private val context: Context) {
         connection.doOutput = true
         connection.useCaches = false
 
-        Log.d(TAG, "urlString=$urlString, postData=$postData")
+        Log.d(tag, "urlString=$urlString, postData=$postData")
 
         // Set request properties
         connection.setRequestProperty("Content-Type", "application/json")
@@ -78,7 +80,7 @@ class HttpUtility(private val context: Context) {
                 postData.toString()
             ) // Assign connection object to class member variable
             val responseString = connection?.inputStream?.bufferedReader()?.readText()
-            Log.d(TAG, "Response: $responseString")
+            Log.d(tag, "Response: $responseString")
 
             // Store session cookies
             val cookies = connection?.headerFields?.get("Set-Cookie")
@@ -88,7 +90,9 @@ class HttpUtility(private val context: Context) {
                 prefs.edit().putStringSet("session_cookies", cookies.toSet()).apply()
             }
 
-            if (connection?.responseCode ?: HttpURLConnection.HTTP_OK == HttpURLConnection.HTTP_OK) {
+            if ((connection?.responseCode
+                    ?: HttpURLConnection.HTTP_OK) == HttpURLConnection.HTTP_OK
+            ) {
                 val jsonResponse = responseString?.let {
                     JSONObject(it)
                 }
@@ -96,11 +100,11 @@ class HttpUtility(private val context: Context) {
                     success = jsonResponse.optBoolean("success")
                 }
             } else {
-                Log.e(TAG, "Error logging in: ${connection?.responseCode}")
+                Log.e(tag, "Error logging in: ${connection?.responseCode}")
             }
         } catch (e: Exception) {
             connection?.disconnect()
-            Log.e(TAG, "Error logging in", e)
+            Log.e(tag, "Error logging in", e)
         }
 
         return success
@@ -118,9 +122,9 @@ class HttpUtility(private val context: Context) {
             connection = makeHttpPostRequest("$urlString/work/process", postData, storedCookies)
 
             // Log the response
-            Log.d(TAG, "Response code: ${connection?.responseCode}")
+            Log.d(tag, "Response code: ${connection?.responseCode}")
             val response = connection?.inputStream?.bufferedReader()?.readText()
-            Log.d(TAG, "Response body: $response")
+            Log.d(tag, "Response body: $response")
 
             if (connection?.responseCode == HttpURLConnection.HTTP_OK) {
                 val jsonResponse = response?.let {
@@ -143,7 +147,7 @@ class HttpUtility(private val context: Context) {
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Exception return_book", e)
+            Log.e(tag, "Exception return_book", e)
         }
 
         throw Exception("connection error")
@@ -161,9 +165,9 @@ class HttpUtility(private val context: Context) {
             connection = makeHttpPostRequest("$urlString/work/process", postData, storedCookies)
 
             // Log the response
-            Log.d(TAG, "Response code: ${connection?.responseCode}")
+            Log.d(tag, "Response code: ${connection?.responseCode}")
             val response = connection?.inputStream?.bufferedReader()?.readText()
-            Log.d(TAG, "Response body: $response")
+            Log.d(tag, "Response body: $response")
 
             if (connection?.responseCode == HttpURLConnection.HTTP_OK) {
                 val jsonResponse = response?.let {
@@ -190,7 +194,7 @@ class HttpUtility(private val context: Context) {
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Exception selecting user", e)
+            Log.e(tag, "Exception selecting user", e)
         }
 
         throw Exception("connection error")
@@ -206,12 +210,12 @@ class HttpUtility(private val context: Context) {
 
             val storedCookies = getStoredCookies()
             connection =
-                makeHttpPostRequest("$urlString/work/process", postData.toString(), storedCookies)
+                makeHttpPostRequest("$urlString/work/process", postData, storedCookies)
 
             // Log the response
-            Log.d(TAG, "Response code: ${connection?.responseCode}")
+            Log.d(tag, "Response code: ${connection?.responseCode}")
             val response = connection?.inputStream?.bufferedReader()?.readText()
-            Log.d(TAG, "Response body: $response")
+            Log.d(tag, "Response body: $response")
 
             if (connection?.responseCode == HttpURLConnection.HTTP_OK) {
                 val jsonResponse = response?.let {
@@ -228,7 +232,7 @@ class HttpUtility(private val context: Context) {
                             jsonResponse.getJSONArray("borrowed_books")
                         val borrowedBookObject =
                             borrowedBookObjects.getJSONObject(0)
-                        var borrowedBook = BorrowedBook(
+                        val borrowedBook = BorrowedBook(
                             borrowedBookObject.getInt("book_id"),
                             borrowedBookObject.getString("book_title")
                         )
@@ -240,7 +244,7 @@ class HttpUtility(private val context: Context) {
                 }
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Exception borrowing book", e)
+            Log.e(tag, "Exception borrowing book", e)
         }
 
         throw Exception("connection error")

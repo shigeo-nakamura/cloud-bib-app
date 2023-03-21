@@ -1,9 +1,9 @@
+package com.cloudbib.client
+
 import android.Manifest
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.util.Log
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.ActivityResultCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
@@ -15,11 +15,7 @@ class BarcodeScanner(
     private val fragment: Fragment,
     private val listener: OnBarcodeScannedListener
 ) {
-    companion object {
-        const val RESULT_OK = -1
-    }
-
-    private val TAG = "BarcodeScanner"
+    private val tag = "com.cloudbib.client.BarcodeScanner"
     private var fromButton = ""
 
     interface OnBarcodeScannedListener {
@@ -27,8 +23,8 @@ class BarcodeScanner(
         fun onScanFailed()
     }
 
-    private lateinit var barcodeScanLauncher: ActivityResultLauncher<Intent>
-    private lateinit var cameraPermissionLauncher: ActivityResultLauncher<String>
+    private var barcodeScanLauncher: ActivityResultLauncher<Intent>
+    private var cameraPermissionLauncher: ActivityResultLauncher<String>
     private var originalOrientation = 0
 
     init {
@@ -60,7 +56,7 @@ class BarcodeScanner(
     }
 
     fun start(fromButton: String) {
-        Log.d(TAG, "start")
+        Log.d(tag, "start")
 
         this@BarcodeScanner.fromButton = fromButton
 
@@ -79,7 +75,7 @@ class BarcodeScanner(
     }
 
     private fun launchBarcodeScanner() {
-        Log.d(TAG, "launchBarcodeScanner")
+        Log.d(tag, "launchBarcodeScanner")
 
         originalOrientation = fragment.requireActivity().requestedOrientation
         val integrator = IntentIntegrator.forSupportFragment(fragment)
@@ -92,12 +88,12 @@ class BarcodeScanner(
     }
 
     private fun requestCameraPermission() {
-        Log.d(TAG, "requestCameraPermission")
+        Log.d(tag, "requestCameraPermission")
 
         if (fragment.lifecycle.currentState.isAtLeast(Lifecycle.State.CREATED)) {
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         } else {
-            Log.e(TAG, "Fragment is not yet created")
+            Log.e(tag, "Fragment is not yet created")
         }
     }
 }

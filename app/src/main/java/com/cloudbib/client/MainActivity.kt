@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
         navView.setupWithNavController(navController)
 
         // Get the SharedToggleViewModel
-        val sharedViewModel = ViewModelProvider(this).get(SharedToggleViewModel::class.java)
+        val sharedViewModel = ViewModelProvider(this)[SharedToggleViewModel::class.java]
 
         // Observe the loginError LiveData object
         sharedViewModel.getLoginError().observe(this) { error ->

@@ -1,7 +1,7 @@
 package com.cloudbib.client.ui.borrow
 
-import BarcodeScanner
-import HttpResponse
+import com.cloudbib.client.BarcodeScanner
+import com.cloudbib.client.HttpResponse
 import androidx.fragment.app.Fragment
 import android.os.Bundle
 import android.util.Log
@@ -21,7 +21,7 @@ import kotlinx.coroutines.withContext
 
 class BorrowFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
 
-    private val TAG = "BorrowFragment"
+    private val tag = "BorrowFragment"
     private var _binding: FragmentBorrowBinding? = null
 
     // This property is only valid between onCreateView and onDestroyView.
@@ -48,39 +48,37 @@ class BorrowFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
     private fun updateBorrowField(res: HttpResponse) {
         requireView().findViewById<TextView>(R.id.numBookView).text = res.num_borrowed_book.toString()
         requireView().findViewById<TextView>(R.id.borrowTitleView).text = res.borrowed_book?.title.toString()
-        requireView().findViewById<TextView>(R.id.borrowStatusView).text = "貸出処理が完了しました".toString()
+        requireView().findViewById<TextView>(R.id.borrowStatusView).text = "貸出処理が完了しました"
     }
 
     override fun onBarcodeScanned(barcode: String?, fromButton: String) {
         userId = barcode
-        Log.d(TAG, "Scanned barcode: $userId, fromButton: $fromButton")
+        Log.d(tag, "Scanned barcode: $userId, fromButton: $fromButton")
 
-        Log.d(TAG, "find : $barcode")
+        Log.d(tag, "find : $barcode")
         val sharedViewModel =
-            ViewModelProvider(requireActivity()).get(SharedToggleViewModel::class.java)
+            ViewModelProvider(requireActivity())[SharedToggleViewModel::class.java]
         val httpUtility = sharedViewModel.getHttpUtility()
 
         if (barcode == null) {
-            Log.d(TAG, "symbol not found")
+            Log.d(tag, "symbol not found")
             return
         }
 
         // Launch a coroutine to execute return_book() on a background thread
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                var res: HttpResponse;
-                if (fromButton == "buttonSelectUser") {
-                    res = withContext(Dispatchers.IO) {
+                val res: HttpResponse = if (fromButton == "buttonSelectUser") {
+                    withContext(Dispatchers.IO) {
                         httpUtility.selectUser(barcode)
                     }
-                }
-                else {
-                    res = withContext(Dispatchers.IO) {
+                } else {
+                    withContext(Dispatchers.IO) {
                         httpUtility.borrowBook(barcode)
                     }
                 }
-                Log.d(TAG, res.toString())
-                var statusView = requireView().findViewById<TextView>(R.id.borrowStatusView)
+                Log.d(tag, res.toString())
+                val statusView = requireView().findViewById<TextView>(R.id.borrowStatusView)
 
                 if (res.success) {
                     if (fromButton == "buttonSelectUser") {
@@ -107,14 +105,14 @@ class BorrowFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
                 }
             } catch (e: Exception) {
                 // Handle the exception
-                Log.e(TAG, "Exception while returning book: ${e.message}")
+                Log.e(tag, "Exception while returning book: ${e.message}")
                 sharedViewModel.setToggleState(false)
             }
         }
     }
 
     override fun onScanFailed() {
-        Log.e(TAG, "Barcode scanning failed")
+        Log.e(tag, "Barcode scanning failed")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
