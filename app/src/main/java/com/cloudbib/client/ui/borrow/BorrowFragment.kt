@@ -128,7 +128,11 @@ class BorrowFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
                     }
                 }
                 Log.d(tag, res.toString())
-                val statusView = requireView().findViewById<TextView>(R.id.borrowStatusView)
+                val statusView = if (fromButton == "buttonSelectUser") {
+                    requireView().findViewById<TextView>(R.id.userNameView)
+                } else {
+                    requireView().findViewById<TextView>(R.id.borrowStatusView)
+                }
 
                 if (res.success) {
                     if (fromButton == "buttonSelectUser") {
