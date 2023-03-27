@@ -129,7 +129,7 @@ class BorrowFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
                 }
                 Log.d(tag, res.toString())
                 val statusView = if (fromButton == "buttonSelectUser") {
-                    requireView().findViewById<TextView>(R.id.userNameView)
+                    requireView().findViewById<TextView>(R.id.unameView)
                 } else {
                     requireView().findViewById<TextView>(R.id.borrowStatusView)
                 }
@@ -161,7 +161,7 @@ class BorrowFragment : Fragment(), BarcodeScanner.OnBarcodeScannedListener {
                 }
             } catch (e: Exception) {
                 // Handle the exception
-                Log.e(tag, "Exception while returning book: ${e.message}")
+                Log.e(tag, "Exception while selecting a user: ${e.message}")
                 sharedViewModel.setToggleState(false)
             }
         }
